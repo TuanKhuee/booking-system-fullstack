@@ -34,7 +34,17 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddScoped<IAuthService, AuthService.Services.AuthService>();
 builder.Services.AddScoped<JwtService>();
+
+
+
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+    await SeedData.SeedAdmin(db, config);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
