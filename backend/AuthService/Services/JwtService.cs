@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AuthService.Models;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 namespace AuthService.Services
 {
@@ -38,6 +39,10 @@ namespace AuthService.Services
                 signingCredentials: creds
             );
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public string GenerateRefreshToken()
+        {
+           return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         }
     }
 }
