@@ -23,6 +23,7 @@ namespace BookingService.Controllers
         }
 
         // Create a new booking
+        [Authorize(Roles = "User,Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromBody] CreateBookingRequest request)
         {

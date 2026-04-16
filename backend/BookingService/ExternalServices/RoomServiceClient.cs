@@ -10,30 +10,35 @@ namespace BookingService.ExternalServices
     public class RoomServiceClient : IRoomServiceClient
     {
         private readonly HttpClient _httpClient;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public RoomServiceClient(HttpClient httpClient)
+        public RoomServiceClient(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<RoomDto?> GetRoomById(int roomId)
         {
-            var url = $"/api/rooms/{roomId}";
-            Console.WriteLine($"Calling: {url}");
+            var token = _httpContextAccessor
+                .HttpContext?.Request.Headers["Authorization"]
+                .ToString();
 
-            var res = await _httpClient.GetAsync(url);
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue(
+                        "Bearer",
+                        token.Replace("Bearer ", "")
+                    );
+            }
 
-            Console.WriteLine($"Status: {res.StatusCode}");
+            var res = await _httpClient.GetAsync($"/api/rooms/by-id/{roomId}");
 
             if (!res.IsSuccessStatusCode)
                 return null;
 
-            var content = await res.Content.ReadAsStringAsync();
-            Console.WriteLine($"Response: {content}");
-
-            var room = await res.Content.ReadFromJsonAsync<RoomDto>();
-
-            return room;
+            return await res.Content.ReadFromJsonAsync<RoomDto>();
         }
     }
 }
