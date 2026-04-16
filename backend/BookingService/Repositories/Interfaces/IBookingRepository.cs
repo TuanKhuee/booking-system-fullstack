@@ -13,6 +13,7 @@ namespace BookingService.Repositories
         Task<List<Booking>> GetAllAsync();
         Task<Booking?> GetByIdAsync(int id);
         Task<bool> IsRoomBooked(int roomId, DateTime checkIn, DateTime checkOut);
+        Task<List<Booking>> GetPagedAsync(int page, int pageSize);
         Task SaveChangesAsync();
     }
 }
