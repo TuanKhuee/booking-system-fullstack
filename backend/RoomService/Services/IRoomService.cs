@@ -13,6 +13,7 @@ namespace RoomService.Services
         Task<RoomType> CreateRoomType(CreateRoomTypeRequest request);
         Task<Room> CreateRoom(CreateRoomRequest request);
         Task<IEnumerable<RoomTypeDetailResponse>> GetAllRoomsByType(int roomTypeId);
+        Task<RoomRespone> GetRoomById(int id);
         Task<Room> GetRoomById(string roomNumber);
         Task UpdateRoom(string roomNumber, UpdateRoomRequest request);
         Task DeleteRoom(string roomNumber);
