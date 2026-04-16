@@ -110,6 +110,24 @@ namespace RoomService.Services
             return _context.SaveChangesAsync();
         }
 
-
+        public async Task<RoomRespone> GetRoomById(int id)
+        {
+            var room = await _context.Rooms.Include(x => x.RoomType).FirstOrDefaultAsync(r => r.Id == id);
+            if (room == null)
+            {
+                return null;
+            }
+            return new RoomRespone
+            {
+                Id = room.Id,
+                RoomNumber = room.RoomNumber,
+                Status = room.Status,
+                RoomTypeId = room.RoomTypeId,
+                RoomTypeName = room.RoomType.Name,
+                Price = room.RoomType.Price,
+                Description = room.RoomType.Description,
+                Capacity = room.RoomType.Capacity
+            };
+        }
     }
 }
