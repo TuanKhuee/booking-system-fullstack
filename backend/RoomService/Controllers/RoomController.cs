@@ -15,12 +15,13 @@ namespace RoomService.Controllers
     public class RoomController : ControllerBase
     {
         private readonly IRoomService _roomService;
+
         public RoomController(IRoomService roomService)
         {
             _roomService = roomService;
-
         }
 
+        [Authorize(Roles = "Admin,User")]
         [HttpGet]
         public async Task<IActionResult> GetAllRooms()
         {
@@ -28,6 +29,19 @@ namespace RoomService.Controllers
             return Ok(rooms);
         }
 
+        [Authorize(Roles = "Admin,User")]
+        [HttpGet("by-id/{id}")]
+        public async Task<IActionResult> GetRoomById(int id)
+        {
+            var room = await _roomService.GetRoomById(id);
+            if (room == null)
+            {
+                return NotFound();
+            }
+            return Ok(room);
+        }
+
+        [Authorize(Roles = "Admin,User")]
         [HttpGet("roomstypes/{roomTypeId}")]
         public async Task<IActionResult> GetAllRoomsByType(int roomTypeId)
         {
@@ -35,7 +49,8 @@ namespace RoomService.Controllers
             return Ok(rooms);
         }
 
-        [HttpGet("{roomNumber}")]
+        [Authorize(Roles = "Admin,User")]
+        [HttpGet("by-roomnumber/{roomNumber}")]
         public async Task<IActionResult> GetRoomById(string roomNumber)
         {
             var room = await _roomService.GetRoomById(roomNumber);
@@ -59,14 +74,16 @@ namespace RoomService.Controllers
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request)
         {
             var room = await _roomService.CreateRoom(request);
-            return Ok(room) ;
+            return Ok(room);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{roomNumber}")]
-        public async Task<IActionResult> UpdateRoom(string roomNumber, [FromBody] UpdateRoomRequest request)
+        public async Task<IActionResult> UpdateRoom(
+            string roomNumber,
+            [FromBody] UpdateRoomRequest request
+        )
         {
-            
             await _roomService.UpdateRoom(roomNumber, request);
             return Ok();
         }
