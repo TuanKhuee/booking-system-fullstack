@@ -46,9 +46,11 @@ builder
         };
     });
 
+
 // Authorization
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

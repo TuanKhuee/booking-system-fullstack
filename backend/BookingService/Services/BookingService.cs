@@ -71,7 +71,7 @@ namespace BookingService.Services
                 RoomId = request.RoomId,
                 CheckInDate = request.CheckInDate,
                 CheckOutDate = request.CheckOutDate,
-                TotalPrice = days * room.PricePerNight,
+                TotalPrice = days * room.Price,
                 Status = BookingStatus.Pending,
             };
 
