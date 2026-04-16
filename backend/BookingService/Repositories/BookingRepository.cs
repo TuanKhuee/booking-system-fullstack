@@ -8,11 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookingService.Repositories
 {
-    public class BookingReposity : IBookingRepository
+    public class BookingRepository : IBookingRepository
     {
         private readonly AppDbContext _context;
 
-        public BookingReposity(AppDbContext context)
+        public BookingRepository(AppDbContext context)
         {
             _context = context;
         }
@@ -37,15 +37,22 @@ namespace BookingService.Repositories
             return _context.Bookings.Where(b => b.UserId == userId).ToListAsync();
         }
 
-
         public Task<bool> IsRoomBooked(int roomId, DateTime checkIn, DateTime checkOut)
         {
             return _context.Bookings.AnyAsync(b =>
-                b.RoomId == roomId &&
-                b.Status != BookingStatus.Cancelled &&
-                ((checkIn >= b.CheckInDate && checkIn < b.CheckOutDate) ||
-                 (checkOut > b.CheckInDate && checkOut <= b.CheckOutDate) ||
-                 (checkIn <= b.CheckInDate && checkOut >= b.CheckOutDate)));
+                b.RoomId == roomId
+                && b.Status != BookingStatus.Cancelled
+                && (
+                    (checkIn >= b.CheckInDate && checkIn < b.CheckOutDate)
+                    || (checkOut > b.CheckInDate && checkOut <= b.CheckOutDate)
+                    || (checkIn <= b.CheckInDate && checkOut >= b.CheckOutDate)
+                )
+            );
+        }
+
+        public async Task<List<Booking>> GetPagedAsync(int page, int pageSize)
+        {
+            return await _context.Bookings.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         }
 
         public async Task SaveChangesAsync()

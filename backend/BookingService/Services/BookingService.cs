@@ -45,24 +45,24 @@ namespace BookingService.Services
         public async Task<int> CreateBookingAsync(int userId, CreateBookingRequest request)
         {
             if (request.CheckOutDate <= request.CheckInDate)
-            {
                 throw new Exception("Invalid date");
-            }
+
             var room = await _roomServiceClient.GetRoomById(request.RoomId);
-            if (room is null)
-            {
+            Console.WriteLine("CALLING ROOM SERVICE...");
+
+            // 🔥 FIX CHÍNH
+            if (room == null || room.Id == 0)
                 throw new Exception("Room not found");
-            }
 
             var isBooked = await _bookingRepository.IsRoomBooked(
                 request.RoomId,
                 request.CheckInDate,
                 request.CheckOutDate
             );
+
             if (isBooked)
-            {
                 throw new Exception("Room is already booked for the selected dates");
-            }
+
             var days = (request.CheckOutDate - request.CheckInDate).Days;
 
             var booking = new Booking
@@ -71,7 +71,7 @@ namespace BookingService.Services
                 RoomId = request.RoomId,
                 CheckInDate = request.CheckInDate,
                 CheckOutDate = request.CheckOutDate,
-                TotalPrice = days * room.Price,
+                TotalPrice = days * room.PricePerNight,
                 Status = BookingStatus.Pending,
             };
 
@@ -98,9 +98,37 @@ namespace BookingService.Services
                 .ToList();
         }
 
-        public Task<List<BookingResponse>> GetBookingsByUserIdAsync(int userId)
+        public async Task<List<BookingResponse>> GetBookingsByUserIdAsync(int userId)
         {
-            throw new NotImplementedException();
+            var bookings = await _bookingRepository.GetByUserIdAsync(userId);
+            return bookings
+                .Select(b => new BookingResponse
+                {
+                    Id = b.Id,
+                    UserId = b.UserId,
+                    RoomId = b.RoomId,
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    TotalPrice = b.TotalPrice,
+                    Status = b.Status.ToString(),
+                })
+                .ToList();
+        }
+
+        public async Task<List<BookingResponse>> GetPagedAsync(int page, int pageSize)
+        {
+            var bookings = await _bookingRepository.GetPagedAsync(page, pageSize);
+
+            return bookings
+                .Select(b => new BookingResponse
+                {
+                    Id = b.Id,
+                    RoomId = b.RoomId,
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    Status = b.Status.ToString(),
+                })
+                .ToList();
         }
     }
 }
