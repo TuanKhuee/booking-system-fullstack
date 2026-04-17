@@ -8,6 +8,8 @@ using BookingService.ExternalServices.Interfaces;
 using BookingService.Models;
 using BookingService.Repositories;
 using BookingService.Services.Interfaces;
+using Microsoft.AspNetCore.SignalR;
+using BookingService.Hubs;
 
 namespace BookingService.Services
 {
@@ -15,14 +17,23 @@ namespace BookingService.Services
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly IRoomServiceClient _roomServiceClient;
+        private readonly IEmailService _emailService;
+        private readonly IHubContext<BookingHub> _hubContext;
+        private readonly IAuthServiceClient _authServiceClient;
 
         public BookingService(
             IBookingRepository bookingRepository,
-            IRoomServiceClient roomServiceClient
+            IRoomServiceClient roomServiceClient,
+            IEmailService emailService,
+            IHubContext<BookingHub> hubContext,
+            IAuthServiceClient authServiceClient
         )
         {
             _bookingRepository = bookingRepository;
             _roomServiceClient = roomServiceClient;
+            _emailService = emailService;
+            _hubContext = hubContext;
+            _authServiceClient = authServiceClient;
         }
 
         public async Task CancelBookingAsync(int bookingId, int userId)
@@ -62,7 +73,9 @@ namespace BookingService.Services
 
             if (isBooked)
                 throw new Exception("Room is already booked for the selected dates");
+            
 
+             
             var days = (request.CheckOutDate - request.CheckInDate).Days;
 
             var booking = new Booking
@@ -77,6 +90,29 @@ namespace BookingService.Services
 
             await _bookingRepository.AddAsync(booking);
             await _bookingRepository.SaveChangesAsync();
+
+            // SingalR: Notify clients about new booking
+            await _hubContext.Clients.All.SendAsync("BookingCreated", new
+            {
+                BookingId = booking.Id,
+                RoomId = booking.RoomId,
+                CheckInDate = booking.CheckInDate,
+                CheckOutDate = booking.CheckOutDate,
+                TotalPrice = booking.TotalPrice,
+                Status = booking.Status.ToString(),
+            });
+
+            // Send confirmation email (simplified)
+            var user = await _authServiceClient.GetUserById(userId);
+
+            if(user == null)
+                throw new Exception("User not found");
+            
+            await _emailService.SendEmailAsync(
+                toEmail: user.Email,
+                subject: "Booking Confirmation",
+                body: $"{user.Name} booking for room {room.Name} from {booking.CheckInDate:d} to {booking.CheckOutDate:d} has been created. Total price: ${booking.TotalPrice}"
+            );
 
             return booking.Id;
         }
