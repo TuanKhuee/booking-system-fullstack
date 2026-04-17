@@ -16,7 +16,7 @@ namespace BookingService.ExternalServices
         }
         public Task<UserDto?> GetUserById(int userId)
         {
-            var respone = _httpClient.GetAsync($"/api/users/{userId}");
+            var respone = _httpClient.GetAsync($"/api/auth/users/{userId}");
             if (!respone.Result.IsSuccessStatusCode)
                 throw new Exception($"Failed to get user with id {userId} from AuthService");
             
