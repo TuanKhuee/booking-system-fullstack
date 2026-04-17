@@ -121,5 +121,22 @@ namespace AuthService.Services
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<UserRespone?> GetUserById(int userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserRespone
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber
+            };
+        }
     }
 }

@@ -90,5 +90,16 @@ namespace AuthService.Controllers
 
             return Ok(new { message = "Logged out" });
         }
+
+        [HttpGet("users/{id}")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var user = await _authService.GetUserById(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok(user);
+        }
     }
 }

@@ -2,10 +2,11 @@
 
 ## Base URLs
 
-| Service      | URL                                    |
-|--------------|----------------------------------------|
-| Auth Service | `https://localhost:{port_authservice}` |
-| Room Service | `https://localhost:{port_roomservice}` |
+| Service         | URL                                       |
+|-----------------|-------------------------------------------|
+| Auth Service    | `https://localhost:{port_authservice}`    |
+| Room Service    | `https://localhost:{port_roomservice}`    |
+| Booking Service | `https://localhost:{port_bookingservice}` |
 
 ## 🔐 Authentication
 
@@ -26,6 +27,7 @@ Some endpoints require the **Admin** role.
 - [Room Service](#-room-service)
   - [Rooms API](#rooms-api)
   - [Room Types API](#room-types-api)
+- [Booking Service](#-booking-service)
 - [Error Response Format](#-error-response-format)
 - [Data Models](#-data-models)
 
@@ -39,8 +41,8 @@ Some endpoints require the **Admin** role.
 |--------|-----------------------|------|-------------|--------------------------|
 | POST   | `/api/auth/register`  | no   | ✅ Active   | Register a new account   |
 | POST   | `/api/auth/login`     | no   | ✅ Active   | Login and receive JWT    |
-| POST   | `/api/auth/refresh`   | no   | 🚧 Planned  | Refresh access token     |
-| POST   | `/api/auth/logout`    | yes  | 🚧 Planned  | Logout, revoke token     |
+| POST   | `/api/auth/refresh`   | no   | ✅ Active   | Refresh access token     |
+| POST   | `/api/auth/logout`    | yes  | ✅ Active   | Logout, revoke token     |
 
 ---
 
@@ -311,6 +313,171 @@ Creates a new room type.
 
 ---
 
+## 📅 Booking Service
+
+**Base Path:** `/api/bookings`
+
+| Method | Endpoint                    | Auth        | Description                 |
+|--------|-----------------------------|-------------|-----------------------------|
+| POST   | `/api/bookings`             | User, Admin | Create a new booking        |
+| GET    | `/api/bookings/my`          | User, Admin | Get my bookings             |
+| GET    | `/api/bookings`             | Admin       | Get all bookings            |
+| GET    | `/api/bookings/{id}`        | User, Admin | Get booking by ID           |
+| DELETE | `/api/bookings/{id}/cancel` | User, Admin | Cancel a booking            |
+| GET    | `/api/bookings/paged`       | User, Admin | Get all bookings with pagination |
+
+---
+
+#### `POST /api/bookings`
+
+Creates a new room booking.
+
+**Auth:** User, Admin
+
+**Request Body**
+```json
+{
+  "roomId": 1,
+  "checkInDate": "2026-04-20T14:00:00Z",
+  "checkOutDate": "2026-04-25T12:00:00Z"
+}
+```
+
+**Response `200 OK`**
+```json
+{
+  "message": "Booking created successfully",
+  "bookingId": 123
+}
+```
+
+**Errors:** `400 Bad Request` · `401 Unauthorized`
+
+---
+
+#### `GET /api/bookings/my`
+
+Returns all bookings for the authenticated user.
+
+**Auth:** User, Admin
+
+**Response `200 OK`**
+```json
+[
+  {
+    "id": 123,
+    "userId": 5,
+    "roomId": 1,
+    "checkInDate": "2026-04-20T14:00:00Z",
+    "checkOutDate": "2026-04-25T12:00:00Z",
+    "totalPrice": 7500000,
+    "status": "Pending"
+  }
+]
+```
+
+---
+
+#### `GET /api/bookings`
+
+Returns all bookings across the system.
+
+**Auth:** Admin
+
+**Response `200 OK`**
+```json
+[
+  {
+    "id": 123,
+    "userId": 5,
+    "roomId": 1,
+    "checkInDate": "2026-04-20T14:00:00Z",
+    "checkOutDate": "2026-04-25T12:00:00Z",
+    "totalPrice": 7500000,
+    "status": "Confirmed"
+  }
+]
+```
+
+**Errors:** `401 Unauthorized` · `403 Forbidden`
+
+---
+
+#### `GET /api/bookings/{id}`
+
+Returns a specific booking by ID. Note: Users can only retrieve their own bookings, while Admins can retrieve any booking.
+
+**Auth:** User, Admin | **Path Param:** `id` (int)
+
+**Response `200 OK`**
+```json
+{
+  "id": 123,
+  "userId": 5,
+  "roomId": 1,
+  "checkInDate": "2026-04-20T14:00:00Z",
+  "checkOutDate": "2026-04-25T12:00:00Z",
+  "totalPrice": 7500000,
+  "status": "Confirmed"
+}
+```
+
+**Errors:** `401 Unauthorized` · `404 Not Found`
+
+---
+
+#### `DELETE /api/bookings/{id}/cancel`
+
+Cancels a given booking. Note: Users can only cancel their own bookings.
+
+**Auth:** User, Admin | **Path Param:** `id` (int)
+
+**Response `200 OK`**
+```json
+{
+  "message": "Booking cancelled successfully"
+}
+```
+
+**Errors:** `400 Bad Request` · `401 Unauthorized`
+
+---
+
+#### `GET /api/bookings/paged`
+
+Returns paginated bookings.
+
+**Auth:** User, Admin
+
+**Query Parameters**
+
+| Param      | Type  | Default | Description      |
+|------------|-------|---------|------------------|
+| `page`     | `int` | `1`     | Page number      |
+| `pageSize` | `int` | `10`    | Items per page   |
+
+**Response `200 OK`**
+```json
+{
+  "items": [
+    {
+       "id": 123,
+       "userId": 5,
+       "roomId": 1,
+       "checkInDate": "2026-04-20T14:00:00Z",
+       "checkOutDate": "2026-04-25T12:00:00Z",
+       "totalPrice": 7500000,
+       "status": "Confirmed"
+    }
+  ],
+  "totalCount": 1,
+  "page": 1,
+  "pageSize": 10
+}
+```
+
+---
+
 ## ❗ Error Response Format
 
 ```json
@@ -382,6 +549,27 @@ Creates a new room type.
 | `Available`   | Room is available      |
 | `Booked`      | Room is booked         |
 | `Maintenance` | Room under maintenance |
+
+### Booking (Booking Service)
+
+| Field          | Type            | Description             |
+|----------------|-----------------|-------------------------|
+| `Id`           | `int`           | Primary key             |
+| `UserId`       | `int`           | FK → User               |
+| `RoomId`       | `int`           | FK → Room               |
+| `CheckInDate`  | `DateTime`      | Check-in date           |
+| `CheckOutDate` | `DateTime`      | Check-out date          |
+| `TotalPrice`   | `decimal`       | Total cost of the stay  |
+| `Status`       | `BookingStatus` | Current booking status  |
+| `CreatedAt`    | `DateTime`      | Time booking was made   |
+
+### 📍 Booking Status Values
+
+| Value         | Description                    |
+|---------------|--------------------------------|
+| `Pending`     | Booking awaiting confirmation  |
+| `Confirmed`   | Booking is confirmed           |
+| `Cancelled`   | Booking has been cancelled     |
 
 ---
 
