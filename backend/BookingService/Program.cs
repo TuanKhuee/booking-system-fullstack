@@ -2,6 +2,7 @@ using System.Text;
 using BookingService.Data;
 using BookingService.ExternalServices;
 using BookingService.ExternalServices.Interfaces;
+using BookingService.Hubs;
 using BookingService.Repositories;
 using BookingService.Services;
 using BookingService.Services.Interfaces;
@@ -22,11 +23,19 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Dependency Injection
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IBookingService, BookingService.Services.BookingService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSignalR();
 
 // HttpClient → call RoomService
 builder.Services.AddHttpClient<IRoomServiceClient, RoomServiceClient>(client =>
 {
     client.BaseAddress = new Uri("http://localhost:5294");
+});
+
+// HttpClient → call AuthService
+builder.Services.AddHttpClient<IAuthServiceClient, AuthServiceClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5221");
 });
 
 // JWT Authentication
@@ -46,6 +55,7 @@ builder
         };
     });
 
+
 // Authorization
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
@@ -53,7 +63,7 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-
+app.MapHub<BookingHub>("/hubs/bookingHub");
 // Auth
 app.UseAuthentication();
 app.UseAuthorization();
