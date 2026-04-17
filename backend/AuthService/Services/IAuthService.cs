@@ -12,5 +12,6 @@ namespace AuthService.Services
         Task<(string accessToken, string refreshToken)> Login(LoginRequest request);
         Task<(string accessToken, string refreshToken)> RefreshToken(RefreshTokenRequest request);
         Task Logout(string refreshToken);
+        Task<UserRespone?> GetUserById(int userId);
     }
 }
