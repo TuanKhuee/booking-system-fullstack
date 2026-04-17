@@ -27,7 +27,9 @@ namespace BookingService.Services
             email.To.Add(MailboxAddress.Parse(toEmail));
             email.Subject = subject;
 
-            email.Body = new TextPart(TextFormat.Html) { Text = body };
+            var builder = new BodyBuilder { HtmlBody = body };
+
+            email.Body = builder.ToMessageBody();
 
             using var smtp = new SmtpClient();
             await smtp.ConnectAsync(
