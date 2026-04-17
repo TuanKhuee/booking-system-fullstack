@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 using Azure.Core;
 using BookingService.DTOs;
 using BookingService.ExternalServices.Interfaces;
+using BookingService.Hubs;
 using BookingService.Models;
 using BookingService.Repositories;
 using BookingService.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
-using BookingService.Hubs;
 
 namespace BookingService.Services
 {
@@ -73,9 +73,7 @@ namespace BookingService.Services
 
             if (isBooked)
                 throw new Exception("Room is already booked for the selected dates");
-            
 
-             
             var days = (request.CheckOutDate - request.CheckInDate).Days;
 
             var booking = new Booking
@@ -88,31 +86,75 @@ namespace BookingService.Services
                 Status = BookingStatus.Pending,
             };
 
-            await _bookingRepository.AddAsync(booking);
-            await _bookingRepository.SaveChangesAsync();
-
             // SingalR: Notify clients about new booking
-            await _hubContext.Clients.All.SendAsync("BookingCreated", new
-            {
-                BookingId = booking.Id,
-                RoomId = booking.RoomId,
-                CheckInDate = booking.CheckInDate,
-                CheckOutDate = booking.CheckOutDate,
-                TotalPrice = booking.TotalPrice,
-                Status = booking.Status.ToString(),
-            });
+            await _hubContext.Clients.All.SendAsync(
+                "BookingCreated",
+                new
+                {
+                    BookingId = booking.Id,
+                    RoomId = booking.RoomId,
+                    CheckInDate = booking.CheckInDate,
+                    CheckOutDate = booking.CheckOutDate,
+                    TotalPrice = booking.TotalPrice,
+                    Status = booking.Status.ToString(),
+                }
+            );
 
             // Send confirmation email (simplified)
             var user = await _authServiceClient.GetUserById(userId);
 
-            if(user == null)
+            if (user == null)
                 throw new Exception("User not found");
-            
+            var totalVnd = booking.TotalPrice.ToString("N0") + " VND";
+
+            var body =
+                $@"
+                    <div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333'>
+                    <h2 style='color: #2c3e50;'>🎉 Booking Confirmed</h2>
+    
+                    <p>Xin chào <b>{user.Name}</b>,</p>
+    
+                    <p>Đặt phòng của bạn đã được tạo thành công với thông tin chi tiết:</p>
+    
+                    <table style='border-collapse: collapse; width: 100%; margin-top: 10px'>
+                <tr>
+                <td style='padding: 8px; border: 1px solid #ddd'><b>Room</b></td>
+                <td style='padding: 8px; border: 1px solid #ddd'>{room.RoomNumber}</td>
+                </tr>
+                <tr>
+                <td style='padding: 8px; border: 1px solid #ddd'><b>Check-in</b></td>
+                <td style='padding: 8px; border: 1px solid #ddd'>{booking.CheckInDate:dd/MM/yyyy}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px; border: 1px solid #ddd'><b>Check-out</b></td>
+                    <td style='padding: 8px; border: 1px solid #ddd'>{booking.CheckOutDate:dd/MM/yyyy}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px; border: 1px solid #ddd'><b>Total Price</b></td>
+                    <td style='padding: 8px; border: 1px solid #ddd; color: green; font-weight: bold'>
+                {totalVnd}
+                </td>
+                </tr>
+                </table>
+
+                <p style='margin-top: 20px'>
+                    Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi ❤️
+                </p>
+
+                <hr />
+                <small style='color: gray'>
+                Đây là email tự động, vui lòng không trả lời.
+                        </small>
+                </div>
+            ";
             await _emailService.SendEmailAsync(
                 toEmail: user.Email,
                 subject: "Booking Confirmation",
-                body: $"{user.Name} booking for room {room.Name} from {booking.CheckInDate:d} to {booking.CheckOutDate:d} has been created. Total price: ${booking.TotalPrice}"
+                body: body
             );
+
+            await _bookingRepository.AddAsync(booking);
+            await _bookingRepository.SaveChangesAsync();
 
             return booking.Id;
         }
