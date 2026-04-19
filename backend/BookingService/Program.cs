@@ -6,6 +6,7 @@ using BookingService.Hubs;
 using BookingService.Repositories;
 using BookingService.Services;
 using BookingService.Services.Interfaces;
+using BookingService.Services.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,6 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IBookingService, BookingService.Services.BookingService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHostedService<RabbitMQConsumer>();
 builder.Services.AddSignalR();
 
 // HttpClient → call RoomService
