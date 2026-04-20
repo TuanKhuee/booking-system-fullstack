@@ -14,5 +14,6 @@ namespace BookingService.Services.Interfaces
         Task<List<BookingResponse>> GetAllBookingsAsync();
         Task CancelBookingAsync(int bookingId, int userId);
         Task<List<BookingResponse>> GetPagedAsync(int page, int pageSize);
+        Task ConfirmPaymentForBookingAsync(int bookingId);
     }
 }
