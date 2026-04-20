@@ -208,5 +208,31 @@ namespace BookingService.Services
                 })
                 .ToList();
         }
+
+        public async Task ConfirmPaymentForBookingAsync(int bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId);
+            if (booking == null)
+            {
+                return;
+            }
+
+            if (booking.Status == BookingStatus.Confirmed)
+            {
+                return;
+            }
+
+            booking.Status = BookingStatus.Confirmed;
+            await _bookingRepository.SaveChangesAsync();
+
+            await _hubContext.Clients.All.SendAsync(
+                "BookingPaymentSuccess",
+                new
+                {
+                    BookingId = booking.Id,
+                    Status = booking.Status.ToString()
+                }
+            );
+        }
     }
 }
