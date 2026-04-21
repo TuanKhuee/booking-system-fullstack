@@ -14,6 +14,9 @@ namespace RoomService.Models
         [Column(TypeName = "decimal(18,0)")]
         public decimal Price { get; set; }
         public int Capacity { get; set; }
+        public string? Location { get; set; }
+        public List<string> ImageUrls { get; set; } = new();
         public List<Room> Rooms { get; set; }
+
     }
 }
