@@ -1,0 +1,46 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: always
+
+  authservice:
+    build:
+      context: ./backend/AuthService
+      dockerfile: ../../docker/backend/auth/Dockerfile
+    ports:
+      - "5001:80"
+
+  roomservice:
+    build:
+      context: ./backend/RoomService
+      dockerfile: ../../docker/backend/room/Dockerfile
+    ports:
+      - "5002:80"
+
+  bookingservice:
+    build:
+      context: ./backend/BookingService
+      dockerfile: ../../docker/backend/booking/Dockerfile
+    ports:
+      - "5003:80"
+    depends_on:
+      - authservice
+      - roomservice
+      - rabbitmq
+
+  paymentservice:
+    build:
+      context: ./backend/PaymentService
+      dockerfile: ../../docker/backend/payment/Dockerfile
+    ports:
+      - "5004:80"
+    depends_on:
+      - bookingservice
+      - rabbitmq

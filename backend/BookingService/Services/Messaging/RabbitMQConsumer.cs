@@ -31,14 +31,36 @@ namespace BookingService.Services.Messaging
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
             var factory = new ConnectionFactory { HostName = _hostName };
-            _connection = await factory.CreateConnectionAsync();
-            _channel = await _connection.CreateChannelAsync();
 
-            await _channel.QueueDeclareAsync(queue: QueueName,
-                                 durable: true,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
+            // Retry logic: RabbitMQ may take time to become ready in Docker
+            var maxRetries = 10;
+            var delay = TimeSpan.FromSeconds(2);
+
+            for (int i = 0; i < maxRetries; i++)
+            {
+                try
+                {
+                    Console.WriteLine($"[*] Attempting to connect to RabbitMQ at '{_hostName}' (attempt {i + 1}/{maxRetries})...");
+                    _connection = await factory.CreateConnectionAsync(cancellationToken);
+                    _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+                    await _channel.QueueDeclareAsync(queue: QueueName,
+                                         durable: true,
+                                         exclusive: false,
+                                         autoDelete: false,
+                                         arguments: null,
+                                         cancellationToken: cancellationToken);
+
+                    Console.WriteLine("[✓] Successfully connected to RabbitMQ.");
+                    break;
+                }
+                catch (Exception ex) when (i < maxRetries - 1)
+                {
+                    Console.WriteLine($"[!] RabbitMQ connection failed: {ex.Message}. Retrying in {delay.TotalSeconds}s...");
+                    await Task.Delay(delay, cancellationToken);
+                    delay *= 2; // Exponential backoff
+                }
+            }
 
             await base.StartAsync(cancellationToken);
         }
