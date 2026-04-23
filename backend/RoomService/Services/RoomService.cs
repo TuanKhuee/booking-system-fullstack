@@ -29,7 +29,10 @@ namespace RoomService.Services
                 RoomTypeName = r.RoomType.Name,
                 Price = r.RoomType.Price,
                 Description = r.RoomType.Description,
-                Capacity = r.RoomType.Capacity
+                Capacity = r.RoomType.Capacity,
+                Location = r.RoomType.Location,
+                ImageUrls = r.RoomType.ImageUrls
+
             }).ToListAsync();
         }
 
@@ -53,7 +56,10 @@ namespace RoomService.Services
                 Name = request.Name,
                 Description = request.Description,
                 Price = request.Price,
-                Capacity = request.Capacity
+                Capacity = request.Capacity,
+                Location = request.Location,
+                ImageUrls = request.ImageUrls
+
             };
             _context.RoomTypes.Add(roomType);
             return _context.SaveChangesAsync().ContinueWith(t => roomType);
@@ -82,7 +88,10 @@ namespace RoomService.Services
             RoomTypeName = rt.Name,
             Price = rt.Price,
             Description = rt.Description,
+            Location = rt.Location,
+            ImageUrls = rt.ImageUrls,
             Rooms = rt.Rooms.Select(r => new RoomInTypes // Map danh sách phòng vào DTO con
+
             {
                 Id = r.Id,
                 RoomNumber = r.RoomNumber,
@@ -126,7 +135,10 @@ namespace RoomService.Services
                 RoomTypeName = room.RoomType.Name,
                 Price = room.RoomType.Price,
                 Description = room.RoomType.Description,
-                Capacity = room.RoomType.Capacity
+                Capacity = room.RoomType.Capacity,
+                Location = room.RoomType.Location,
+                ImageUrls = room.RoomType.ImageUrls
+
             };
         }
     }
